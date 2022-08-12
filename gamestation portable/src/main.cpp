@@ -20,8 +20,9 @@ using namespace std;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
   OLED_SDA, OLED_SCK, OLED_DC, OLED_RESET, OLED_CS);
 
-vector<vector<bool> > screen1;
-vector<vector<bool> > screen2;
+vector<vector<bool> > screen1( SCREEN_WIDTH , vector<bool> (SCREEN_HEIGHT, 0));
+vector<vector<bool> > screen2( SCREEN_WIDTH , vector<bool> (SCREEN_HEIGHT, 0));
+   vector<vector<uint8_t> > neighbours( SCREEN_WIDTH , vector<uint8_t> (SCREEN_HEIGHT, 0));
 
 class Ball{
    public:
@@ -336,58 +337,108 @@ void drawEnvironment(){
    display.display();
 }
 
-void initGameOfLife(){
+void initGameOfLife(uint8_t percent){
+   //Serial.println("initGameOfLife");
    for(uint8_t i = 0; i < SCREEN_HEIGHT; i++){
       for(uint8_t j = 0; j < SCREEN_WIDTH; j++){
-         if(rand() % 100 + 1 < 5){
+         screen1[j][i] = 0;
+         display.drawPixel(j, i, SSD1306_BLACK);
+         screen2[j][i] = 0;
+         display.drawPixel(j, i, SSD1306_BLACK);
+      }
+   }
+
+   for(uint8_t i = 0; i < SCREEN_HEIGHT; i++){
+      for(uint8_t j = 0; j < SCREEN_WIDTH; j++){
+         if(rand() % 100 + 1 < percent){
+            screen1[j][i] = 1;
             display.drawPixel(j, i, SSD1306_WHITE);
-            screen1.at(j).at(i) = 1;
-            screen2.at(j).at(i) = 1;
          } 
       }
    }
-   
-
    display.display();
 }
 
 
 
-uint16_t giveNeighbours(uint8_t x, uint8_t y, vector<vector<bool>> screen){
+uint8_t giveNeighbours(uint8_t x, uint8_t y){
+   //Serial.println("giveNeighbours");
    uint8_t neighbours = 0;
+   bool leftEdge = 0;
+   bool rightEdge = 0;
+   bool topEdge = 0;
+   bool bottomEdge = 0;
 
-   if(screen1.at(x).at(y+1)) neighbours++;
-   if(screen1.at(x+1).at(y)) neighbours++;
-   if(screen1.at(x).at(y-1)) neighbours++;
-   if(screen1.at(x-1).at(y)) neighbours++;
+   if(x <= 0) leftEdge = 1;
+   if(y <= 0) topEdge = 1;
+   if(x >= SCREEN_WIDTH - 1) rightEdge = 1;
+   if(y >= SCREEN_HEIGHT - 1) bottomEdge = 1;
 
-   if(screen1.at(x+1).at(y+1)) neighbours++;
-   if(screen1.at(x-1).at(y-1)) neighbours++;
-   if(screen1.at(x+1).at(y-1)) neighbours++;
-   if(screen1.at(x-1).at(y+1)) neighbours++;
+   if (!bottomEdge) if(screen1[x][y+1]) neighbours++;
+   if (!rightEdge) if(screen1[x+1][y]) neighbours++;
+   if (!topEdge) if(screen1[x][y-1]) neighbours++;
+   if (!leftEdge) if(screen1[x-1][y]) neighbours++;
+
+   if (!rightEdge && !bottomEdge) if(screen1[x+1][y+1]) neighbours++;
+   if (!leftEdge && !topEdge) if(screen1[x-1][y-1]) neighbours++;
+   if (!rightEdge && !topEdge) if(screen1[x+1][y-1]) neighbours++;
+   if (!leftEdge && !bottomEdge) if(screen1[x-1][y+1]) neighbours++;
 
    return neighbours;
 }
 
-void gameOfLife(){
+void incrementNeighbours(uint8_t x, uint8_t y){
+   bool leftEdge = 0;
+   bool rightEdge = 0;
+   bool topEdge = 0;
+   bool bottomEdge = 0;
+
+   if(x <= 0) leftEdge = 1;
+   if(y <= 0) topEdge = 1;
+   if(x >= SCREEN_WIDTH - 1) rightEdge = 1;
+   if(y >= SCREEN_HEIGHT - 1) bottomEdge = 1;
+   
+   if (!bottomEdge) neighbours[x][y+1]++;
+   if (!rightEdge) neighbours[x+1][y]++;
+   if (!topEdge) neighbours[x][y-1]++;
+   if (!leftEdge) neighbours[x-1][y]++;
+
+   if (!rightEdge && !bottomEdge) neighbours[x+1][y+1]++;
+   if (!leftEdge && !topEdge) neighbours[x-1][y+1]++;
+   if (!rightEdge && !topEdge) neighbours[x+1][y+1]++;
+   if (!leftEdge && !bottomEdge) neighbours[x-1][y+1]++;
+}
+
+void oldGameOfLife(){
+   for(uint8_t i = 0; i < SCREEN_HEIGHT; i++){
+      for(uint8_t j = 0; j < SCREEN_WIDTH; j++){
+         neighbours[j][i] = 0;
+      }
+   }
+   for(uint8_t i = 0; i < SCREEN_HEIGHT; i++){
+      for(uint8_t j = 0; j < SCREEN_WIDTH; j++){
+         incrementNeighbours(j, i);
+      }
+   }
    
    for(uint8_t i = 0; i < SCREEN_HEIGHT; i++){
       for(uint8_t j = 0; j < SCREEN_WIDTH; j++){
-         uint16_t neighbours = giveNeighbours(j, i, screen1);
+         //uint8_t neighbours = giveNeighbours(j, i, screen1);
          
-         bool pixel = screen1.at(j).at(i);
+         uint8_t n = neighbours[j][i];
 
-         if(!pixel && neighbours == 3){
-            screen2.at(j).at(i) = 1;
-            display.drawPixel(j, i, SSD1306_WHITE);
-         } 
-         else if(neighbours != 3){
-            screen2.at(j).at(i) = 0;
+         bool pixel = screen1[j][i];
+
+         
+         if(pixel && (n < 2 || n > 3)){
+            screen2[j][i] = 0;
             display.drawPixel(j, i, SSD1306_BLACK);
          }
-         vector<vector<bool> > swap = screen2;
-         screen2 = screen1;
-         screen1 = swap;
+         else if (!pixel && n == 3){
+            screen2[j][i] = 1;
+            display.drawPixel(j, i, SSD1306_WHITE);
+         }
+
          /*
          if(!display.getPixel(j, i) && neighbours == 3) display.drawPixel(j, i, SSD1306_WHITE);
          else if(display.getPixel(j, i)){
@@ -395,20 +446,62 @@ void gameOfLife(){
          }*/
       }
    }
+   screen1.swap(screen2);
+   
+  
+   
    /*
    for(uint8_t i = 0; i < SCREEN_HEIGHT; i++){
       for(uint8_t j = 0; j < SCREEN_WIDTH; j++){
-         if(newScreen.at(j).at(i)) display.drawPixel(j, i, SSD1306_WHITE);
+         if(newScreen[j][i]) display.drawPixel(j, i, SSD1306_WHITE);
          else display.drawPixel(j, i, SSD1306_BLACK);
       }
    }
    */
+   display.display();
+}
+
+void gameOfLife(){
+   Serial.println("gameOfLife");
+   
+   for(uint8_t i = 0; i < SCREEN_HEIGHT; i++){
+      for(uint8_t j = 0; j < SCREEN_WIDTH; j++){
+         //uint8_t neighbours = giveNeighbours(j, i, screen1);
+         
+         uint8_t n = giveNeighbours(j, i);
+
+         bool pixel = screen1[j][i];
+
+         
+         if(pixel){ 
+            if(n < 2 || n > 3){
+               screen2[j][i] = 0;
+               display.drawPixel(j, i, SSD1306_BLACK);
+            }
+            else{
+               screen2[j][i] = 1;
+               display.drawPixel(j, i, SSD1306_WHITE);
+            }
+         }
+         else if (!pixel){
+            if(n == 3){
+               screen2[j][i] = 1;
+               display.drawPixel(j, i, SSD1306_WHITE);
+            }
+            else{
+               screen2[j][i] = 0;
+               display.drawPixel(j, i, SSD1306_BLACK);
+            }
+         }
+      }
+   }
+   screen1.swap(screen2);
    
    display.display();
 }
 
 void setup() {
-   Serial.begin(9600);
+   //Serial.begin(115200);
    srand(time(0));
    if(!display.begin(SSD1306_SWITCHCAPVCC)) {
       Serial.println(F("SSD1306 allocation failed"));
@@ -417,23 +510,18 @@ void setup() {
 
    display.clearDisplay();
 
-   //drawEnvironment();
-
-   //testdrawchar();
-   delay(1000);
-   initGameOfLife();
+   initGameOfLife(25);
 }
 
 unsigned long currentTime = 0;
 unsigned long lastTime = 0;
 
 void loop(){
-   /*
+   
    currentTime = millis();
-   if(currentTime - lastTime > 500){
+   if(currentTime - lastTime > 100){
       lastTime = currentTime;
-      
+      gameOfLife();
    }
-   */
-   gameOfLife();
+   
 }  
