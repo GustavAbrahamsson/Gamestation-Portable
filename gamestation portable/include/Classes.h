@@ -1,6 +1,10 @@
 #include <Arduino.h>
 #include <map>
+
 using namespace std;
+
+typedef vector<vector<bool>> BitMatrix;
+
 
 class XandY{
     public:
@@ -18,6 +22,7 @@ class Actor{
         XandY vel;
         XandY old_pos;
         XandY old_vel;
+        int16_t rotation = 0;
         void spawn(){
             setVisible(1);
             alive = 1;
@@ -33,17 +38,18 @@ class Actor{
         void setVisible(bool bit=1){
             visible = bit;
         }
-        void rotate(uint16_t deg){
+        void rotate(int16_t deg){
             rotation += deg;
+            rotateGraphics();
         }
-        void setRotation(uint16_t deg){
+        void setRotation(int16_t deg){
             rotation = deg;
+            rotateGraphics();
         }
     private:
+        virtual void rotateGraphics();
         bool visible = 1;
         bool alive = 1;
-        uint16_t rotation = 0;
-
 };
 
 class Ball: public Actor{
@@ -60,44 +66,82 @@ class Ball: public Actor{
 
 class Glider: public Actor{
    public:
-        Glider(uint8_t x_pos, uint8_t y_pos, uint16_t rot){
+        Glider(uint8_t x_pos, uint8_t y_pos, int16_t rot){
             pos.x = x_pos;
             pos.y = y_pos;
             old_pos.x = x_pos;
             old_pos.y = y_pos;
             vel.x = 0;
             vel.y = 0;
+            initGraphics();
             setRotation(rot);
             spawn();
             setVisible();
-            initGraphics();
             display();
             Serial.println("Created Glider");
         }
-        void initGraphics(){
-            for(int i = 0; i < 3; i++){
-                for(int j = 0; j < 3; j++){
-                    graphics[j][i] = gliderDL[j][i];
-                }
-            }
-        }
+
         void clear(){
-            displayImage(old_pos.x, old_pos.y, 3, graphics, 0, 1);
+            displayImage(old_pos.x, old_pos.y, graphics, 0, true);
         }
         void display(){
             clear();
-            displayImage(pos.x, pos.y, 3, graphics, 1, 1);
+            displayImage(pos.x, pos.y, graphics, 1, true);
         }
     private:
-        bool graphics[3][3];
+        void rotateGraphics(){
+            BitMatrix temp(3, vector<bool> (3, 0));
+            for(int i = 0; i < 3; i++){
+                for(int j = 0; j < 3; j++){
+                    temp[j][i] = graphics[j][i];
+                }
+            }
+            switch(rotation){
+                case 90:
+                    for(int i = 0; i < 3; i++){
+                        for(int j = 0; j < 3; j++){
+                            graphics[i][j] = temp[j][2-i];
+                        }
+                    }
+                    break;
+                case 180:
+                    for(int i = 0; i < 3; i++){
+                        for(int j = 0; j < 3; j++){
+                            graphics[j][i] = temp[i][j];
+                        }
+                    }
+                    break;
+                case -90:
+                    for(int i = 0; i < 3; i++){
+                        for(int j = 0; j < 3; j++){
+                            graphics[i][j] = temp[2-j][i];
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+        }
+        void initGraphics(){
+            graphics = BitMatrix(height,vector<bool>(width,0));
+            for(int i = 0; i < 3; i++){
+                for(int j = 0; j < 3; j++){
+                    graphics[j][i] = gliderUR[j][i];
+                }
+            }
+        }
+        uint8_t height = 3;
+        uint8_t width = 3;
+        BitMatrix graphics;
 };
 
 std::map<uint16_t, Glider*> gliderMap;
 uint8_t gliderIndex = 0;
 
-void spawn(uint8_t x, uint8_t y, string name, uint8_t rot){
+void spawnObject(uint8_t x, uint8_t y, string name, int16_t rot=0){
     Serial.println("Spawn");
-   if(name == "GliderDL"){
+    if(name == "GliderUR"){
         if (gliderIndex >= 255) gliderIndex = 0;
         Glider* createdGlider = new Glider(x, y, rot);
         Serial.println("new Glider()");
