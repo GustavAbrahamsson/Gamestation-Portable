@@ -21,6 +21,11 @@ typedef vector<vector<bool>> BitMatrix;
 
 #define GROUND_HEIGHT 7
 
+#include <Tone32.h>
+#define BUZZER_PIN 16
+
+TaskHandle_t soundTask;
+
 void drawEnvironment(){
    //drawLine(0, SCREEN_HEIGHT - 1 - GROUND_HEIGHT, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1 - GROUND_HEIGHT);
    fillRectangle(0, SCREEN_HEIGHT - 1 - GROUND_HEIGHT, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1 - GROUND_HEIGHT);
@@ -46,7 +51,44 @@ void randomSpawns(){
    }*/
 }
 
+
+uint16_t rampTone = 2000;
+uint16_t rampTone2 = 5;
+uint16_t rampTone3 = 10000;
+
+uint16_t counter = 0;
+
+void soundLoop(void * parameter){
+   for(;;){
+      
+      rampTone -= 100;
+      tone(BUZZER_PIN, rampTone, 5, 0);
+      if (rampTone < 5){
+         rampTone = 2000;
+         counter++;
+      }
+
+      rampTone2 += 100;
+      //tone(BUZZER_PIN, rampTone2, 5, 0);
+      if (rampTone2 > 5000) rampTone2 = 5;
+
+      rampTone3 -= 100;
+      //tone(BUZZER_PIN, rampTone3, 5, 0);
+      if (rampTone3 < 5000) rampTone3 = 10000;
+
+      Serial.println(counter);
+
+      if (counter > 30){
+         delay(2000);
+         counter = 0;
+      }
+
+      
+   }
+}
+
 void setup() {
+
    Serial.begin(115200);
    srand(time(0));
    if(!display.begin(SSD1306_SWITCHCAPVCC)) {
@@ -62,6 +104,8 @@ void setup() {
 
    randomSpawns();
    display.display();
+
+   xTaskCreatePinnedToCore(soundLoop, "sound", 1000, NULL, 1, &soundTask, 0);
    delay(5000);
 }
 
@@ -90,4 +134,5 @@ void loop(){
       initGameOfLife(0);
       randomSpawns();
    }
-}  
+}
+

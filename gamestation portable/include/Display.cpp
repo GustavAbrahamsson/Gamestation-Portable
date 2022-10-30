@@ -9,6 +9,14 @@ typedef vector<vector<bool>> BitMatrix;
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
+// ESP32-S2-WROOM-I
+#define OLED_SDA   35 // FSPID
+#define OLED_SCK   36 // FSPICLK
+#define OLED_DC    8
+#define OLED_CS    34 // GND
+#define OLED_RESET 21
+
+// ESP32 lolin32
 #define OLED_SDA   23
 #define OLED_SCK   18
 #define OLED_DC    13
