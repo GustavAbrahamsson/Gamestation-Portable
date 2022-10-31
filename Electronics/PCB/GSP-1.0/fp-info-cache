@@ -1,4 +1,4 @@
-20165925272353870
+20169259746459414
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -52920,12 +52920,26 @@ Fuse Fuseholder TR5 Littelfuse/Wickmann No. 460 No560
 2
 2
 GustavsGlobalLibrary
+3xAA holder (534-2464)
+
+
+0
+2
+2
+GustavsGlobalLibrary
 128x64 2.42 inch OLED display
 
 
 0
 11
 7
+GustavsGlobalLibrary
+CR2477 battery holder
+
+
+0
+2
+2
 GustavsGlobalLibrary
 EllipseHole
 
