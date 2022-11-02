@@ -10,6 +10,7 @@ using namespace std;
 
 typedef vector<vector<bool>> BitMatrix;
 
+#include "Definitions.h"
 #include "Graphics/Graphics.cpp"
 #include "Display.cpp"
 #include "Classes.h"
@@ -22,7 +23,6 @@ typedef vector<vector<bool>> BitMatrix;
 #define GROUND_HEIGHT 7
 
 #include <Tone32.h>
-#define BUZZER_PIN 16
 
 TaskHandle_t soundTask;
 
