@@ -2,29 +2,34 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-using namespace std;
+//using namespace std;
 
-typedef vector<vector<bool>> BitMatrix;
+typedef std::vector<std::vector<bool>> BitMatrix;
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
+/*
 // ESP32-S2-WROOM-I
 #define OLED_SDA   35 // FSPID
 #define OLED_SCK   36 // FSPICLK
 #define OLED_DC    8
 #define OLED_CS    34 // GND
 #define OLED_RESET 21
+*/
 
+
+/* Used for prototyping on a breadboard
 // ESP32 lolin32
 #define OLED_SDA   23
 #define OLED_SCK   18
 #define OLED_DC    13
 #define OLED_CS    5 // GND
 #define OLED_RESET 15
+*/
 
-BitMatrix screen1( SCREEN_WIDTH , vector<bool> (SCREEN_HEIGHT, 0));
-BitMatrix screen2( SCREEN_WIDTH , vector<bool> (SCREEN_HEIGHT, 0));
+BitMatrix screen1( SCREEN_WIDTH , std::vector<bool> (SCREEN_HEIGHT, 0));
+BitMatrix screen2( SCREEN_WIDTH , std::vector<bool> (SCREEN_HEIGHT, 0));
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
   OLED_SDA, OLED_SCK, OLED_DC, OLED_RESET, OLED_CS);

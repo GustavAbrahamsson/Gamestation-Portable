@@ -23,3 +23,4 @@
 
 
 #define BUZZER_PIN 16
+#define BUZZER_PIN_2 14
