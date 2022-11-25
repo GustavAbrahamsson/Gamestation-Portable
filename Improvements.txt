@@ -1,0 +1,11 @@
+1.0
+
+Add pushbutton between GPIO0 and GND (upload mode)
+
+Add pushbutton between EN and GND (reset button)
+
+Remove UART-circuit? Not needed. Only use USB-OTG
+
+Volume potentiometers need to be bigger
+
+Softer buttons

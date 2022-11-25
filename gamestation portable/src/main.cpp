@@ -6,9 +6,11 @@
 #include <ctime>
 #include <cstdlib>
 
-using namespace std;
+//using namespace std;
 
-typedef vector<vector<bool>> BitMatrix;
+#include <vector>
+
+typedef std::vector<std::vector<bool>> BitMatrix;
 
 #include "Definitions.h"
 #include "Graphics/Graphics.cpp"
@@ -18,7 +20,6 @@ typedef vector<vector<bool>> BitMatrix;
 #include "example_code.h"
 
 #include "Game_of_Life.cpp"
-
 
 #define GROUND_HEIGHT 7
 
@@ -90,6 +91,7 @@ void soundLoop(void * parameter){
 void setup() {
 
    Serial.begin(115200);
+   Serial.println("Serial begin");
    srand(time(0));
    if(!display.begin(SSD1306_SWITCHCAPVCC)) {
       Serial.println(F("SSD1306 allocation failed"));
@@ -116,7 +118,7 @@ unsigned long lastTime2 = 0;
 void loop(){
    
    currentTime = millis();
-
+   if (currentTime % 1000 < 5) Serial.println("1");
    gameOfLife();
    /*
    drawLine(renderRange[0], renderRange[2], renderRange[1], renderRange[2]);
