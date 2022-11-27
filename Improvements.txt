@@ -1,5 +1,7 @@
 1.0
 
+Add blue LED to show EN?
+
 Add pushbutton between GPIO0 and GND (upload mode)
 
 Add pushbutton between EN and GND (reset button)
@@ -9,3 +11,5 @@ Remove UART-circuit? Not needed. Only use USB-OTG
 Volume potentiometers need to be bigger
 
 Softer buttons
+
+Remove pulldown resistors and use INPUT_PULLDOWN

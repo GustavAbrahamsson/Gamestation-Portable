@@ -1,15 +1,15 @@
 //ESP32-S2-WROOM-I
 
 // D-pad pins
-#define BTN1 1
-#define BTN2 2
-#define BTN3 3
-#define BTN4 4
+#define BTN0 1
+#define BTN1 2
+#define BTN2 3
+#define BTN3 4
 
-#define BTN5 5
-#define BTN6 6
-#define BTN7 7
-#define BTN8 8
+#define BTN4 5
+#define BTN5 6
+#define BTN6 7
+#define BTN7 8
 
 #define SELECT 41
 #define START 42

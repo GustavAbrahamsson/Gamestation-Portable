@@ -24,25 +24,27 @@ typedef std::vector<std::vector<bool>> BitMatrix;
 
 #include <Tone32.h>
 
+bool btn0 = 0;
 bool btn1 = 0;
 bool btn2 = 0;
 bool btn3 = 0;
-bool btn4 = 0;
 
+bool btn4 = 0;
 bool btn5 = 0;
 bool btn6 = 0;
 bool btn7 = 0;
-bool btn8 = 0;
+
+bool btn[] = {0, 0, 0, 0, 0, 0, 0, 0}; // Buttons pressed
+bool old_btn[] = {0, 0, 0, 0, 0, 0, 0, 0}; // Buttons pressed
 
 bool btnSelect = 0;
 bool btnStart = 0;
 
-uint8_t bzr1_btn = BTN1;
-uint8_t last_bzr1_btn = BTN1;
+int8_t bzr1_btn = -1;
+int8_t last_bzr1_btn = -1;
 
-
-uint8_t bzr2_btn = BTN2;
-uint8_t last_bzr2_btn = BTN2;
+int8_t bzr2_btn = -1;
+int8_t last_bzr2_btn = -1;
 
 TaskHandle_t soundTask;
 
@@ -104,6 +106,9 @@ void soundIteration(){
 }
 
 void soundLoop(void * parameter){
+   // TaskCreate works really good on e.g. lolin32 since it has seveal cores, but
+   // the ESP32-S2 only has one core. Having two tasks on the same core really slowed
+   // things down.
    for(;;){
       soundIteration();
    }
@@ -118,30 +123,29 @@ void tone2(uint16_t freq){
 }
 
 void setupInputs(){
+   pinMode(BTN0, INPUT_PULLDOWN);
    pinMode(BTN1, INPUT_PULLDOWN);
    pinMode(BTN2, INPUT_PULLDOWN);
    pinMode(BTN3, INPUT_PULLDOWN);
+
    pinMode(BTN4, INPUT_PULLDOWN);
-   
    pinMode(BTN5, INPUT_PULLDOWN);
    pinMode(BTN6, INPUT_PULLDOWN);
    pinMode(BTN7, INPUT_PULLDOWN);
-   pinMode(BTN8, INPUT_PULLDOWN);
    
    pinMode(SELECT, INPUT_PULLDOWN);
    pinMode(START, INPUT_PULLDOWN);
 }
 
-void readButtons(){
-   btn1 = digitalRead(BTN1);
-   btn2 = digitalRead(BTN2);
-   btn3 = digitalRead(BTN3);
-   btn4 = digitalRead(BTN4);
+void setupOutputs(){
+   ledcAttachPin(BUZZER_PIN, BZR_CHANNEL);
+   ledcAttachPin(BUZZER_PIN_2, BZR_2_CHANNEL);
+}
 
-   btn5 = digitalRead(BTN5);
-   btn6 = digitalRead(BTN6);
-   btn7 = digitalRead(BTN7);
-   btn8 = digitalRead(BTN8);
+void readButtons(){
+   for (int i = 0; i < 8; i++){ // Go through all button values
+      btn[i] = digitalRead(i+1); // Assign new values
+   }
    
    btnSelect = digitalRead(SELECT);
    btnStart = digitalRead(START);
@@ -151,107 +155,88 @@ void setup() {
 
    Serial.begin(115200);
    Serial.println("Serial begun");
-   //delay(1000);
    Serial.println("Beep");
 
    setupInputs();
+   setupOutputs();
 
-   ledcAttachPin(BUZZER_PIN, BZR_CHANNEL);
-   ledcAttachPin(BUZZER_PIN_2, BZR_2_CHANNEL);
    tone1(440);
    tone2(1000);
 
-   Serial.println("BUZZ1: " + analogGetChannel(BUZZER_PIN));
-   Serial.println("BUZZ2: " + analogGetChannel(BUZZER_PIN_2));
-
-   //tone(BUZZER_PIN, 440, 1000, 0);
-   //tone(BUZZER_PIN_2, 800, 1000, 0);
    tone1(0);
    tone2(0);
    Serial.println("Beep ended");
    delay(250);
 
-   
    srand(time(0));
+
    if(!display.begin(SSD1306_SWITCHCAPVCC)) {
       Serial.println(F("SSD1306 allocation failed"));
       while(1);
    }
 
    display.clearDisplay();
-
    initGraphics();
-
    initGameOfLife(0);
-
    randomSpawns();
    display.display();
-
-   //xTaskCreate(soundLoop, "sound", 10000, NULL, 1, &soundTask);
-   delay(3000);
+   delay(2000);
 }
 
-unsigned long currentTime = 0;
-unsigned long lastTime = 0;
-unsigned long lastTime2 = 0;
+uint32_t lastTime = 0;
+uint32_t lastTime2 = 0;
 
-uint16_t mainTimerPeriod = 100;
-uint16_t mainLastTime = 0;
+uint32_t currentTime = 0;
+uint32_t mainTimerPeriod = 10;
+uint32_t mainLastTime = 0;
 
 void loop(){
    
    currentTime = millis();
-   readButtons();
 
-   if (currentTime - mainLastTime > mainTimerPeriod){
+   if (currentTime - mainLastTime > mainTimerPeriod){ // Main execution frequency
       mainLastTime = currentTime;
-      /*
-      Serial.println(btn1);
-      Serial.print(btn2);
-      Serial.print(btn3);
-      Serial.print(btn4);
-      Serial.print(btn5);
-      Serial.print(btn6);
-      Serial.print(btn7);
-      Serial.print(btn8);*/
 
-      /*
-      if       (btn1 && bzr1_btn != 1) bzr1_btn = 1;
-      else if  (btn2 && bzr1_btn != 2) bzr1_btn = 2;
-      else if  (btn3 && bzr1_btn != 3) bzr1_btn = 3;
-      else if  (btn4 && bzr1_btn != 4) bzr1_btn = 4;
-      
-      if       (btn5 && bzr2_btn != 5) bzr2_btn = 5;
-      else if  (btn6 && bzr2_btn != 6) bzr2_btn = 6;
-      else if  (btn7 && bzr2_btn != 7) bzr2_btn = 7;
-      else if  (btn8 && bzr2_btn != 8) bzr2_btn = 8;*/
-      
-      if       (btn1) bzr1_btn = 1;
-      else if  (btn2) bzr1_btn = 2;
-      else if  (btn3) bzr1_btn = 3;
-      else if  (btn4) bzr1_btn = 4;
-      else bzr1_btn = 0;
-      
-      if       (btn5) bzr2_btn = 5;
-      else if  (btn6) bzr2_btn = 6;
-      else if  (btn7) bzr2_btn = 7;
-      else if  (btn8) bzr2_btn = 8;
-      else bzr2_btn = 0;
+      readButtons();
 
+      for (int i = 0; i < 8; i++){ // Go through all button values
+
+         if (btn[i] != old_btn[i]){ // If one value has changed
+            old_btn[i] = btn[i];
+            if(btn[i]){ // If it went from 0 to 1
+               if (i < 4){ // If it's the left D-pad (0-3)
+                  bzr1_btn = i;
+                  break;
+               }else{ // Right D-pad
+                  bzr2_btn = i;
+                  break;
+               }
+            }
+            
+         }
+      }
+      String out_string = "";
+      for(int i = 0; i < 8; i++){
+         out_string += (String)btn[i];
+      }
+      Serial.println(out_string);
+      Serial.println();
+      Serial.println((String)bzr1_btn + "    " + (String)bzr2_btn);
+      Serial.println();
 
       if (bzr1_btn != last_bzr1_btn){
          last_bzr1_btn = bzr1_btn;
          switch (bzr1_btn){
-            case 1:
+            case 0:
                tone1(82);
                break;
-            case 2:
+            case 1:
                tone1(110);
                break;
-            case 3:
+            case 2:
                tone1(147);
                break;
-            case 4:
+            case 3:
                tone1(196);
                break;
             default:
@@ -260,40 +245,25 @@ void loop(){
          }
       }
 
-
-      if (bzr2_btn != last_bzr2_btn){
-         last_bzr2_btn = bzr2_btn;
-         switch (bzr2_btn){
-            case 5:
-               tone2(247);
-               break;
-            case 6:
-               tone2(330);
-               break;
-            case 7:
-               tone2(800);
-               break;
-            case 8:
-               tone2(1500);
-               break;
-            default:
-               tone2(0);
-               break;
-         }
-      }
-   
-      /*
-      if       (btn1) tone1(82);
-      else if  (btn2) tone1(110);
-      else if  (btn3) tone1(147);
-      else if  (btn4) tone1(196);
-      else tone1(0);
       
-      if       (btn5) tone2(247);
-      else if  (btn6) tone2(330);
-      else if  (btn7) tone2(400);
-      else if  (btn8) tone2(500);
-      else tone2(0);*/
+      switch (bzr2_btn){
+         case 4:
+            tone2(247);
+            break;
+         case 5:
+            tone2(330);
+            break;
+         case 6:
+            tone2(800);
+            break;
+         case 7:
+            tone2(1500);
+            break;
+         default:
+            tone2(0);
+            break;
+         
+      }
    }
    
 
@@ -322,6 +292,7 @@ void loop(){
    drawLine(renderRange[0], renderRange[3], renderRange[0], renderRange[2]);
    */
    
+   /*
    if(currentTime - lastTime > 1000){
       lastTime = currentTime;
 
@@ -330,6 +301,6 @@ void loop(){
       clear_display();
       //initGameOfLife(0);
       //randomSpawns();
-   }
+   }*/
 }
 
