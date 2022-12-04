@@ -1,42 +1,12 @@
 #include <Arduino.h>
 #include <deque>
-#include "Display.cpp"
 
-#define PIXEL_WIDTH = 2 // How many pixels wide on the screen
+uint32_t snakeTime = 0; // ms
 
-#define STARTING_POS_X = 20
-#define STARTING_POS_Y = 40
+std::pair<uint16_t, uint16_t> foodPosition;
 
-const uint8_t STARTING_LENGTH = 3;
-
-std::pair<uint8_t, uint8_t> foodPosition;
-
-class Snake{
-    private:
-        std::deque< std::pair<uint8_t,uint8_t> > snakeTrain;
-        std::pair<uint8_t, uint8_t> direction = {0, -1};
-        uint8_t size = STARTING_LENGTH;
-
-        void display(){
-            spawnSnake();
-            
-        }
-
-        void createSnake(){
-            // Create pixels and add them to snakeTrain
-        }
-
-    public:
-    
-        void spawnSnake(){
-            // Go through 'snakeTrain' and print each pixel
-            for(int i = 0; i < snakeTrain.size(); i++){
-                setPixel(snakeTrain[i].first, snakeTrain[i].second);
-            }
-        }   
-
-};
-
+Snake snake;
+//Snake* snake = &Snake(10, 32, 1, 0, 5); // Create the snake object as as extern variable so that it's accessable globally(?)
 
 void displayFood(){
     // Use foodPosition to spawn a square with width PIXEL_WIDTH
@@ -48,13 +18,21 @@ void initFood(){
 }
 
 void setupSnake(){
-   initFood();
+    initFood();
+    snake.initializeSnake(10, 32, 1, 0); // Init the snake with the constructor parameters
 }
 
-void displaySnake(){
-    //
-}
-
+std::pair<int16_t, int16_t> dir;
 void snakeIteration(){
+    dir = dPad_direction(dPad1_btn);
+    snake.snakeStep(dir.first, dir.second);
+    //Serial.println("Snakeiteration()");
+}
 
+void snakeGame(uint32_t current_time){
+    if(current_time - snakeTime > snakePeriod){ // main snake execution
+        snakeTime = current_time;
+        snakeIteration();
+        display.display();
+    }
 }

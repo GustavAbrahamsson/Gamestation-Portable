@@ -10,27 +10,23 @@
 
 std::pair<uint8_t,uint8_t> pos;
 
-//using namespace std;
-
 typedef std::vector<std::vector<bool>> BitMatrix;
 
 #include "Definitions.h"
 #include "Graphics/Graphics.cpp"
-#include "Display.cpp"
+#include "Display.h"
 #include "Classes.h"
 #include "BallBouncing.h"
 #include "example_code.h"
+#include "ButtonHandler.h"
 
 #include "Game_of_Life.cpp"
+#include "Snake.h"
 #include "Snake.cpp"
 
 #define GROUND_HEIGHT 7
 
 #include <Tone32.h>
-
-bool raw_btn[] = {0, 0, 0, 0, 0, 0, 0, 0}; // Buttons pressed
-bool btn[] = {0, 0, 0, 0, 0, 0, 0, 0}; // Buttons pressed, filtered
-bool old_btn[] = {0, 0, 0, 0, 0, 0, 0, 0}; // Old buttons pressed
 
 uint32_t lastTime = 0;
 uint32_t lastTime2 = 0;
@@ -39,22 +35,7 @@ uint32_t currentTime = 0;
 uint32_t mainTimerPeriod = 20;
 uint32_t mainLastTime = 0;
 
-uint32_t btnTime[] = {0, 0, 0, 0, 0, 0, 0, 0};
-uint32_t btnTransientTime = 50;
-bool btnPressed[] = {0, 0, 0, 0, 0, 0, 0, 0};
-
-uint8_t buttonsPressed = 0;
-
-bool btnSelect = 0;
-bool btnStart = 0;
-
-int8_t bzr1_btn = -1;
-int8_t last_bzr1_btn = -1;
-
-int8_t bzr2_btn = -1;
-int8_t last_bzr2_btn = -1;
-
-TaskHandle_t soundTask;
+//Snake* snake = NULL;
 
 void drawEnvironment(){
    //drawLine(0, SCREEN_HEIGHT - 1 - GROUND_HEIGHT, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1 - GROUND_HEIGHT);
@@ -122,14 +103,6 @@ void soundLoop(void * parameter){
    }
 }
 
-void tone1(uint16_t freq){
-   ledcWriteTone(BZR_CHANNEL, freq);
-}
-
-void tone2(uint16_t freq){
-   ledcWriteTone(BZR_2_CHANNEL, freq);
-}
-
 void setupInputs(){
    pinMode(BTN0, INPUT_PULLDOWN);
    pinMode(BTN1, INPUT_PULLDOWN);
@@ -150,149 +123,61 @@ void setupOutputs(){
    ledcAttachPin(BUZZER_PIN_2, BZR_2_CHANNEL);
 }
 
-
-void readButtons(){
-   for (int i = 0; i < 8; i++){ // Go through all button values
-      raw_btn[i] = digitalRead(i+1); // Assign new values
-   }
-   
-   btnSelect = digitalRead(SELECT);
-   btnStart = digitalRead(START);
-}
-
-void filterButtons(){
-   for (int i = 0; i < 8; i++){ // Go through all button values
-
-         if (raw_btn[i] && !old_btn[i] && !btnPressed[i]){ // Went from 0 to 1
-            btnTime[i] = currentTime; // Note down when it was pressed
-            btnPressed[i] = 1;
-            buttonsPressed++;
-            btn[i] = 1; // Assign the value to the true array
-            Serial.println("btn pressed: " + (String)i);
-
-            if (i < 4){ // If it's the left D-pad (0-3)
-               bzr1_btn = i;
-               Serial.println("bzr1 = " + (String)i);
-            }else{ // Right D-pad
-               bzr2_btn = i;
-               Serial.println("bzr2 = " + (String)i);
-            }
-         }
-
-         if(currentTime - btnTime[i] > btnTransientTime && btnPressed[i] && !raw_btn[i]){
-            // If the button has been pressed, 'btnTransientTime' ms has surpassed and
-            // the raw value is 0. ASSUMPTION: the button transient is over.
-            btnTime[i] = currentTime;
-            btnPressed[i] = 0;
-            buttonsPressed--;
-            btn[i] = 0; // Assign the value to the true array
-            Serial.println("btn RESET: " + (String)i);
-            
-         }
-         if(buttonsPressed == 0){ // If no buttons are being pressed
-            bzr1_btn = -1;
-            bzr2_btn = -1;
-         }
-
-      }
-}
-
-void playBzrWithButtons(){
-   if(bzr1_btn != last_bzr1_btn){
-      last_bzr1_btn = bzr1_btn;
-      switch (bzr1_btn){
-         case 0:
-            tone1(82);
-            break;
-         case 1:
-            tone1(110);
-            break;
-         case 2:
-            tone1(147);
-            break;
-         case 3:
-            tone1(196);
-            break;
-         case -1:
-            tone1(0);
-            break;
-      }
-   }
-   
-     if(bzr2_btn != last_bzr2_btn){
-      last_bzr2_btn = bzr2_btn;
-      switch (bzr2_btn){
-         case 4:
-            tone2(247);
-            break;
-         case 5:
-            tone2(330);
-            break;
-         case 6:
-            tone2(800);
-            break;
-         case 7:
-            tone2(1500);
-            break;
-         case -1:
-            tone2(0);
-            break;
-      }
-   } 
-}
-
-
 void setup() {
+    Serial.begin(115200);
+    Serial.println("Serial begun");
+    setupInputs();
+    setupOutputs();
 
-   Serial.begin(115200);
-   Serial.println("Serial begun");
-   setupInputs();
-   setupOutputs();
+    // Beep beep
+    tone1(1750);
+    delay(100);
+    tone1(0);
+    delay(25);
+    tone1(1750);
+    delay(100);
+    tone1(0);
 
-   // Beep beep
-   tone1(1750);
-   delay(100);
-   tone1(0);
-   delay(25);
-   tone1(1750);
-   delay(100);
-   tone1(0);
+    delay(2000);
 
-   delay(2000);
+    srand(time(0));
 
-   srand(time(0));
+    if(!display.begin(SSD1306_SWITCHCAPVCC)) {
+        Serial.println(F("SSD1306 allocation failed"));
+        while(1);
+    }
 
-   if(!display.begin(SSD1306_SWITCHCAPVCC)) {
-      Serial.println(F("SSD1306 allocation failed"));
-      while(1);
-   }
+    display.clearDisplay();
+    //initGraphics();
+    //initGameOfLife(0);
+    //randomSpawns();
+    delay(3000);
 
-   display.clearDisplay();
-   //initGraphics();
-   //initGameOfLife(0);
-   //randomSpawns();
-   display.display();
+    setupSnake();
 
-   setupSnake();
+    display.display();
+
 }
 
 
 void loop(){
    
-   currentTime = millis();
+    currentTime = millis();
 
-   if (currentTime - mainLastTime > mainTimerPeriod){ // Main execution frequency
-      mainLastTime = currentTime;
+    if (currentTime - mainLastTime > mainTimerPeriod){ // Main execution frequency
+        mainLastTime = currentTime;
 
-      readButtons();
+        readButtons();
 
-      filterButtons();
+        filterButtons();
 
-      playBzrWithButtons();
-      
-      snakeIteration();
+        playBzrWithButtons();
 
-   }
+    }
+
+    snakeGame(currentTime);
+
+}
 
 
 
@@ -314,5 +199,5 @@ void loop(){
       //initGameOfLife(0);
       //randomSpawns();
    }*/
-}
+
 
