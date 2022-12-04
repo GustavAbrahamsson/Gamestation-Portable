@@ -3,30 +3,45 @@
 
 uint32_t snakeTime = 0; // ms
 
-std::pair<uint16_t, uint16_t> foodPosition;
+std::pair<int8_t, int8_t> foodPosition = {0, 0};
+
+const uint8_t foodExtending = 30;
 
 Snake snake;
-//Snake* snake = &Snake(10, 32, 1, 0, 5); // Create the snake object as as extern variable so that it's accessable globally(?)
 
 void displayFood(){
-    // Use foodPosition to spawn a square with width PIXEL_WIDTH
+    // Use foodPosition to spawn the food
+    setPixel(foodPosition.first, foodPosition.second);
 }
 
-void initFood(){
+void hideFood(){
+    setPixel(foodPosition.first, foodPosition.second, 0);
+}
+
+void spawnFood(){
     // Spawn food at a random position and update foodPosition
+    int foodX = rand() % (SCREEN_WIDTH - 1);
+    int foodY = rand() % (SCREEN_HEIGHT - 1);
+    foodPosition.first = foodX;
+    foodPosition.second = foodY;
     displayFood();
+    Serial.println("Spawned food at " + (String)foodPosition.first + ", "+ (String)foodPosition.second);
 }
 
 void setupSnake(){
-    initFood();
-    snake.initializeSnake(10, 32, 1, 0); // Init the snake with the constructor parameters
+    spawnFood();
+    snake.initializeSnake(40, 40, 1, 0); // Init the snake with the constructor parameters
 }
 
-std::pair<int16_t, int16_t> dir;
+std::pair<int8_t, int8_t> dir;
 void snakeIteration(){
     dir = dPad_direction(dPad1_btn);
     snake.snakeStep(dir.first, dir.second);
-    //Serial.println("Snakeiteration()");
+    if (snake.snakeHead.first == foodPosition.first && snake.snakeHead.second == foodPosition.second){
+        Serial.println("Nom");
+        snake.extendTail(foodExtending);
+        spawnFood();
+    }
 }
 
 void snakeGame(uint32_t current_time){

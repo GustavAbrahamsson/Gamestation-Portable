@@ -55,8 +55,8 @@ void fillRectangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1){
 
 void setPixel(uint8_t x, uint8_t y, bool bit=1, bool bothScreens=0){
 
-    Serial.println("New pos2:" + (String)x + "  " +  (String)y);
-    Serial.println();
+    //Serial.println("New pos2:" + (String)x + "  " +  (String)y);
+    //Serial.println();
 
     if (bit){
       display.drawPixel(x, y, SSD1306_WHITE);
