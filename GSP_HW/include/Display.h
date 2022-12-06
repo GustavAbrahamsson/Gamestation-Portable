@@ -5,8 +5,6 @@
 #include <vector>
 #include <string>
 
-//using namespace std;
-
 typedef std::vector<std::vector<bool>> BitMatrix;
 
 #define SCREEN_WIDTH 128
@@ -34,6 +32,8 @@ typedef std::vector<std::vector<bool>> BitMatrix;
 BitMatrix screen1( SCREEN_WIDTH , std::vector<bool> (SCREEN_HEIGHT, 0));
 BitMatrix screen2( SCREEN_WIDTH , std::vector<bool> (SCREEN_HEIGHT, 0));
 
+BitMatrix activePixels(SCREEN_WIDTH, std::vector<bool> (SCREEN_HEIGHT, 0));
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
   OLED_SDA, OLED_SCK, OLED_DC, OLED_RESET, OLED_CS);
 
@@ -53,10 +53,18 @@ void fillRectangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1){
    display.display();
 }
 
-void setPixel(uint8_t x, uint8_t y, bool bit=1, bool bothScreens=0){
+void setPixel(uint8_t x, uint8_t y, bool bit=1){
+    if (bit){
+      display.drawPixel(x, y, SSD1306_WHITE);
+      activePixels[x][y] = 1;
+    }
+    else {
+      display.drawPixel(x, y, SSD1306_BLACK);
+      activePixels[x][y] = 0;
+    }
+}
 
-    //Serial.println("New pos2:" + (String)x + "  " +  (String)y);
-    //Serial.println();
+void setPixel_gameOfLife(uint8_t x, uint8_t y, bool bit=1, bool bothScreens=0){
 
     if (bit){
       display.drawPixel(x, y, SSD1306_WHITE);
@@ -77,7 +85,7 @@ void setPixel(uint8_t x, uint8_t y, bool bit=1, bool bothScreens=0){
 void clear_display(){
    for(uint8_t i = 0; i < SCREEN_HEIGHT; i++){
       for(uint8_t j = 0; j < SCREEN_WIDTH; j++){
-         setPixel(j, i, 0, 1);
+         setPixel(j, i, 0);
       }
    }
 }
@@ -89,7 +97,7 @@ void displayImage(uint8_t x, uint8_t y, BitMatrix& g, bool color=true, bool both
       for(int j = 0; j < g.size(); j++){
          Serial.println("g[" + String(i) + "][" + String(j) + "] = " + String(g[j][i]));
          if(g[j][i]){
-            setPixel(j+x, i+y, color, both);
+            setPixel_gameOfLife(j+x, i+y, color, both);
             
             Serial.println("setPixel(" + String(j+x) + ", " + String(i+y) + ", "+ color +")");
          }

@@ -104,21 +104,21 @@ void gameOfLife(){
          if(pixel){ 
             if(n < 2 || n > 3){
                screen2[j][i] = 0;
-               setPixel(j, i, 0);
+               setPixel_gameOfLife(j, i, 0);
             }
             else{
                screen2[j][i] = 1;
-               setPixel(j, i);
+               setPixel_gameOfLife(j, i);
             }
          }
          else if (!pixel){
             if(n == 3){
                screen2[j][i] = 1;
-               setPixel(j, i);
+               setPixel_gameOfLife(j, i);
             }
             else{
                screen2[j][i] = 0;
-               setPixel(j, i, 0);
+               setPixel_gameOfLife(j, i, 0);
             }
          }
          //updateRendering(j, i);
